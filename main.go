@@ -50,10 +50,16 @@ func main() {
 		db:     dbQueries}
 	cmds := commands{
 		lst: map[string]func(*state, command) error{
-			"login":    handlerLogin,
-			"register": handlerCreateUser,
-			"reset":    handlerReset,
-			"users":    handlerGetAllUsers,
+			"login":     handlerLogin,
+			"register":  handlerCreateUser,
+			"reset":     handlerReset,
+			"users":     handlerGetAllUsers,
+			"agg":       handlerAggregate,
+			"addfeed":   middleWareLoggedIn(handlerAddFeed),
+			"feeds":     handlerGetAllFeeds,
+			"follow":    middleWareLoggedIn(handlerFollowFeed),
+			"following": middleWareLoggedIn(handlerFollowsForUser),
+			"unfollow":  middleWareLoggedIn(handlerUnfollowFeed),
 		},
 	}
 	args := os.Args
