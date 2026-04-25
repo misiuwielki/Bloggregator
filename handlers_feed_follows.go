@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -15,6 +16,9 @@ func handlerFollowFeed(s *state, cmd command, user database.User) error {
 	url := cmd.arguments[0]
 	feed, err := s.db.GetFeedByURL(context.Background(), url)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("feed not found, use 'addfeed' first")
+		}
 		return fmt.Errorf("error on finding feed: %w", err)
 	}
 	feedFollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{

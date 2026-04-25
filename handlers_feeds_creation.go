@@ -34,6 +34,7 @@ func fetchFeed(ctx context.Context, feedUrl string) (*RSSFeed, error) {
 		return &RSSFeed{}, fmt.Errorf("error on creating request for feed %w", err)
 	}
 	rq.Header.Set("User-Agent", "gator")
+	fmt.Printf("fetching %s\n", feedUrl)
 	rsp, err := http.DefaultClient.Do(rq)
 	if err != nil {
 		return &RSSFeed{}, fmt.Errorf("error on getting response for feed %w", err)
@@ -82,34 +83,6 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if err != nil {
 		return fmt.Errorf("error on adding feed %w", err)
 	}
-	fmt.Printf("%v", feed)
-	return nil
-}
-
-func handlerGetAllFeeds(s *state, cmd command) error {
-	feedS, err := s.db.GetFeeds(context.Background())
-	if err != nil {
-		return fmt.Errorf("error on retrieving feeds: %w", err)
-	}
-	for _, feed := range feedS {
-		user, err := s.db.GetUserByID(context.Background(), feed.UserID)
-		if err != nil {
-			return fmt.Errorf("error on identifying user: %w", err)
-		}
-		fmt.Printf("Feed name: %s\n", feed.Name)
-		fmt.Printf("Feed url: %s\n", feed.Url)
-		fmt.Printf("Added by: %s\n", user.Name)
-
-	}
-	return nil
-}
-
-func handlerAggregate(s *state, cmd command) error {
-	url := "https://www.wagslane.dev/index.xml"
-	feedS, err := fetchFeed(context.Background(), url)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("%v", feedS)
+	fmt.Printf("%v\n", feed)
 	return nil
 }
