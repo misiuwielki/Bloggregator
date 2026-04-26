@@ -60,6 +60,7 @@ func main() {
 			"follow":    middleWareLoggedIn(handlerFollowFeed),
 			"following": middleWareLoggedIn(handlerFollowsForUser),
 			"unfollow":  middleWareLoggedIn(handlerUnfollowFeed),
+			"browse":    middleWareLoggedIn(handlerBrowse),
 		},
 	}
 	args := os.Args

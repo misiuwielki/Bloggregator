@@ -4,7 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+	"github.com/misiuwielki/Bloggregator/internal/database"
 )
 
 func handlerGetAllFeeds(s *state, cmd command) error {
@@ -68,8 +73,62 @@ func scrapeFeed(s *state) error {
 	fmt.Printf("feed %s fetched\n", feedS.Channel.Title)
 	for i, item := range feedS.Channel.Item {
 		if i < 10 {
-			fmt.Printf("Title: %s\n", item.Title)
+			published, err := time.Parse(time.RFC1123Z, item.PubDate)
+			if err != nil {
+				return fmt.Errorf("Error on parsing date: %w", err)
+			}
+			post, err := s.db.CreatePost(context.Background(), database.CreatePostParams{
+				ID:    uuid.New(),
+				Title: item.Title,
+				Url:   item.Link,
+				Description: sql.NullString{
+					String: item.Description,
+					Valid:  item.Description != ""},
+				PublishedAt: published,
+				FeedID:      feed.ID,
+			})
+			if err != nil {
+				if pqErr, ok := err.(*pq.Error); ok {
+					if pqErr.Code == "23505" {
+						continue
+					}
+				}
+				return fmt.Errorf("Error on saving post %w", err)
+			}
+			fmt.Printf("Saved post: %s\n", post.Title)
 		}
+	}
+	return nil
+}
+
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	limit := 2
+	if len(cmd.arguments) > 0 {
+		if cmd.arguments[0] == "nolimit" {
+			limit = 99999999
+		} else {
+			var err error
+			limit, err = strconv.Atoi(cmd.arguments[0])
+			if err != nil {
+				return fmt.Errorf("limist must be a number or 'nolimit")
+			}
+		}
+	}
+	postS, err := s.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  int32(limit),
+	})
+	if err != nil {
+		return fmt.Errorf("Error on retrieving posts %w", err)
+	}
+	for _, post := range postS {
+		description := ""
+		if post.Description.Valid {
+			description = post.Description.String
+		}
+		fmt.Printf("Title: %v\n", post.Title)
+		fmt.Printf("Text: %v\n", description)
+		fmt.Printf("Published at: %v\n", post.PublishedAt)
 	}
 	return nil
 }
